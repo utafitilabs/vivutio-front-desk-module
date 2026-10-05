@@ -26,6 +26,8 @@ use Vivutio\Bundle\IdentityBundle\Entity\Department;
 use Vivutio\Bundle\IdentityBundle\Entity\Position;
 use Vivutio\Bundle\IdentityBundle\Entity\User;
 use Vivutio\Bundle\IdentityBundle\Enum\TierEnum;
+use Vivutio\FrontDesk\Deletion\PlaceDeskDeletion;
+use Vivutio\FrontDesk\Entity\DeskStay;
 use Vivutio\FrontDesk\Tests\Application\Kernel;
 use Vivutio\FrontDesk\Tests\Application\StandIn\StandInPlaces;
 use Vivutio\FrontDesk\Tests\Application\StandIn\StandInStay;
@@ -158,6 +160,25 @@ final class TheFrontDeskTest extends WebTestCase
     }
 
     /** The module ships the migration its mapping needs, and nothing is left for a diff to write. */
+    /** A place deleted by a Super Admin takes the desk's records there with it, counted on the delete page. */
+    public function testThePlacesDeskRecordsGoWithIt(): void
+    {
+        $em = $this->em();
+        $em->persist(new DeskStay(StandInStays::KIND, '0199b1c0-0000-7000-8000-0000000a0201', StandInPlaces::KIND, StandInPlaces::LODGE, 'SL-0001'));
+        $em->persist(new DeskStay(StandInStays::KIND, '0199b1c0-0000-7000-8000-0000000a0202', StandInPlaces::KIND, StandInPlaces::LODGE, 'SL-0002'));
+        $em->flush();
+
+        $deletion = new PlaceDeskDeletion($em);
+        self::assertTrue($deletion->supports(StandInPlaces::lodge()));
+        self::assertFalse($deletion->supports(new \stdClass()));
+        self::assertNull($deletion->describe(StandInPlaces::lodge()));
+        self::assertSame(['2 front desk records'], array_map(static fn ($line): string => $line->text(), $deletion->whatGoes(StandInPlaces::lodge())));
+
+        $deletion->delete(StandInPlaces::lodge());
+        $em->flush();
+        self::assertCount(0, $em->getRepository(DeskStay::class)->findAll());
+    }
+
     public function testTheMigrationsBuildWhatTheMappingDescribes(): void
     {
         $kernel = self::$kernel;

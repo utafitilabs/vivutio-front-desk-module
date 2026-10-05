@@ -14,11 +14,13 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Vivutio\Contracts\Access\ConcernSourceInterface;
+use Vivutio\Contracts\Deletion\DeletionContributorInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Contracts\Stay\StaySourceInterface;
 use Vivutio\Contracts\Stay\UnitSourceInterface;
 use Vivutio\FrontDesk\Access\FrontDeskConcerns;
 use Vivutio\FrontDesk\Controller\FrontDeskController;
+use Vivutio\FrontDesk\Deletion\PlaceDeskDeletion;
 use Vivutio\FrontDesk\Repository\DeskStayRepository;
 use Vivutio\FrontDesk\Service\FrontDeskService;
 use Vivutio\FrontDesk\Shell\FrontDeskMenu;
@@ -72,4 +74,9 @@ return static function (ContainerConfigurator $container): void {
         ])
         ->public();
     $services->alias(FrontDeskController::class, 'front_desk.controller')->public();
+
+    // The desk's records at a place a Super Admin deletes go with it.
+    $services->set('front_desk.deletion', PlaceDeskDeletion::class)
+        ->args([service('doctrine.orm.entity_manager')])
+        ->tag(DeletionContributorInterface::TAG);
 };
