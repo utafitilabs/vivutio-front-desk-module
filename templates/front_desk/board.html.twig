@@ -1,0 +1,109 @@
+{# A place's desk for a day: arrivals still expected, guests in house, those
+   due out, those who left, and those who never came, each with what may be
+   done for them. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+
+{% block title %}{{ board.place.name }} · Front desk{% endblock %}
+{% block here %}front_desk{% endblock %}
+
+{% macro stay_cells(row) -%}
+    <td><div><b>{{ row.stay.reference }}</b><small>{{ row.stay.guest }}</small></div></td>
+    <td>{{ row.stay.arrival|date('j M') }} – {{ row.stay.departure|date('j M Y') }}</td>
+{%- endmacro %}
+
+{% macro act(board, row, route, label, token, style = 'outline') -%}
+    <form method="post" action="{{ path(route, {kind: board.place.placeKind, id: board.place.placeId, stayKind: row.stay.stayKind, stayId: row.stay.stayId}) }}"><input type="hidden" name="_token" value="{{ csrf_token(token) }}"><button type="submit" class="button {{ style }}">{{ label }}</button></form>
+{%- endmacro %}
+
+{% block page %}
+{%- import _self as desk -%}
+{%- set place = board.place -%}
+{%- set may = door('front_desk.record', place) -%}
+<header class="page-head">
+    <div><nav class="trail" aria-label="Where you are"><a href="{{ path('front_desk_places') }}">Front desk</a> / {{ place.name }}</nav><div class="title"><h1>{{ place.name }}</h1><span class="about">{{ board.day|date('l j F Y') }}{% if board.day|date('Y-m-d') == today|date('Y-m-d') %} &middot; today{% endif %}</span></div></div>
+    <div class="actions">
+        <a class="button outline" href="{{ path('front_desk_board', {kind: place.placeKind, id: place.placeId, day: board.day|date_modify('-1 day')|date('Y-m-d')}) }}">{{ icons.icon('left', 15) }} {{ board.day|date_modify('-1 day')|date('j M') }}</a>
+        <a class="button outline" href="{{ path('front_desk_board', {kind: place.placeKind, id: place.placeId}) }}">Today</a>
+        <a class="button outline" href="{{ path('front_desk_board', {kind: place.placeKind, id: place.placeId, day: board.day|date_modify('+1 day')|date('Y-m-d')}) }}">{{ board.day|date_modify('+1 day')|date('j M') }} {{ icons.paths('<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', 15) }}</a>
+    </div>
+</header>
+
+{% if said %}<div class="notice" role="status">{{ icons.icon('check') }}<span>{{ said }}</span></div>{% endif %}
+{% if expired %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>The form had expired, so nothing was saved. Try again.</span></div>{% endif %}
+{% for said in wrong %}<div class="notice danger" role="alert">{{ icons.icon('alert') }}<span>{{ said }}</span></div>{% endfor %}
+
+<div class="band">
+    <span class="f"><span class="k">Arriving</span><span class="v">{{ board.arrivals|length }}<em>expected</em></span></span>
+    <span class="f"><span class="k">In house</span><span class="v">{{ board.inHouse|length }}<em>{{ board.inHouse|length == 1 ? 'stay' : 'stays' }}</em></span></span>
+    <span class="f"><span class="k">Due out</span><span class="v">{{ board.departures|length }}</span></span>
+</div>
+
+<div class="stack">
+    <section class="panel list" data-board="arrivals">
+        <header class="panel-head"><h2>Arrivals</h2><p>Expected and not yet in, late ones too</p></header>
+        <table class="table">
+            <thead><tr><th>Stay</th><th style="width:190px">Dates</th><th>Units</th>{% if may %}<th style="width:120px"></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for row in board.arrivals %}
+                <tr data-stay="{{ row.stay.reference }}">
+                    {{ desk.stay_cells(row) }}
+                    {% if may %}
+                    <td colspan="2"><form method="post" action="{{ path('front_desk_check_in', {kind: place.placeKind, id: place.placeId, stayKind: row.stay.stayKind, stayId: row.stay.stayId}) }}"><input type="hidden" name="_token" value="{{ csrf_token('front_desk_check_in') }}">
+                        <div class="grid-3">{% for unit in row.stay.units %}<div class="field"><label>{{ unit.count }} {{ unit.name }}</label><input class="input" name="units[{{ unit.type }}]" placeholder="{{ unit.count == 1 ? 'Its number' : 'Their numbers: 3, 4' }}" aria-label="{{ unit.name }} numbers for {{ row.stay.reference }}"></div>{% endfor %}</div>
+                        <button type="submit" class="button main">Check in</button></form>
+                        {{ desk.act(board, row, 'front_desk_no_show', 'No show', 'front_desk_no_show', 'quiet') }}</td>
+                    {% else %}
+                    <td>{% for unit in row.stay.units %}{{ unit.count }} {{ unit.name }}{{ not loop.last ? ', ' }}{% endfor %}</td>
+                    {% endif %}
+                </tr>
+            {% else %}
+                <tr><td colspan="4"><div class="empty"><b>Nobody is expected</b><span>No stay arrives on {{ board.day|date('j M') }}.</span></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel list" data-board="in_house">
+        <header class="panel-head"><h2>In house</h2><p>Checked in and not yet out; one leaving early is checked out here</p></header>
+        <table class="table">
+            <thead><tr><th>Stay</th><th style="width:190px">Dates</th><th>Units</th>{% if may %}<th style="width:130px"></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for row in board.inHouse %}
+                <tr data-stay="{{ row.stay.reference }}">{{ desk.stay_cells(row) }}<td>{% for unit in row.desk.units %}{{ unit.name }} {{ unit.number }}{{ not loop.last ? ', ' }}{% endfor %}</td>{% if may %}<td>{{ desk.act(board, row, 'front_desk_check_out', 'Check out', 'front_desk_check_out') }}</td>{% endif %}</tr>
+            {% else %}
+                <tr><td colspan="3"><div class="empty"><b>Nobody in house</b></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel list" data-board="departures">
+        <header class="panel-head"><h2>Departures</h2><p>Due out on {{ board.day|date('j M') }}, or overdue</p></header>
+        <table class="table">
+            <thead><tr><th>Stay</th><th style="width:190px">Dates</th><th>Units</th>{% if may %}<th style="width:130px"></th>{% endif %}</tr></thead>
+            <tbody>
+            {% for row in board.departures %}
+                <tr data-stay="{{ row.stay.reference }}">{{ desk.stay_cells(row) }}<td>{% for unit in row.desk.units %}{{ unit.name }} {{ unit.number }}{{ not loop.last ? ', ' }}{% endfor %}</td>{% if may %}<td>{{ desk.act(board, row, 'front_desk_check_out', 'Check out', 'front_desk_check_out', 'main') }}</td>{% endif %}</tr>
+            {% else %}
+                <tr><td colspan="4"><div class="empty"><b>Nobody is due out</b></div></td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {% if board.left is not empty %}
+    <section class="panel list" data-board="left">
+        <header class="panel-head"><h2>Left</h2><p>Checked out on {{ board.day|date('j M') }}</p></header>
+        <table class="table"><tbody>{% for row in board.left %}<tr data-stay="{{ row.stay.reference }}">{{ desk.stay_cells(row) }}</tr>{% endfor %}</tbody></table>
+    </section>
+    {% endif %}
+
+    {% if board.noShows is not empty %}
+    <section class="panel list" data-board="no_shows">
+        <header class="panel-head"><h2>No-shows</h2><p>Expected and never came</p></header>
+        <table class="table"><tbody>{% for row in board.noShows %}<tr data-stay="{{ row.stay.reference }}">{{ desk.stay_cells(row) }}{% if may %}<td>{{ desk.act(board, row, 'front_desk_undo_no_show', 'They came after all', 'front_desk_undo_no_show') }}</td>{% endif %}</tr>{% endfor %}</tbody></table>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

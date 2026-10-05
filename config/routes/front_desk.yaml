@@ -1,0 +1,6 @@
+# The front desk's pages (vivutio/front-desk-module): the places it serves, a
+# place's board and its actions, under /front-desk. This file is what mounts
+# them, and it is yours: remove the import and the pages are gone.
+front_desk:
+    resource: '@VivutioFrontDeskBundle/src/Controller/'
+    type: attribute

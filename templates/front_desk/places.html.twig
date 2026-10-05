@@ -1,0 +1,23 @@
+{# The places the desk serves, each opening its board for today. #}
+{% extends '@Shell/page.html.twig' %}
+{% import '@Shell/_icons.html.twig' as icons %}
+
+{% block title %}Front desk{% endblock %}
+{% block here %}front_desk{% endblock %}
+
+{% block page %}
+<header class="page-head"><div><nav class="trail" aria-label="Where you are">Front desk</nav><div class="title"><h1>Front desk</h1><span class="about">Arrivals, guests in house and departures, place by place</span></div></div></header>
+
+<section class="panel list">
+    <table class="table">
+        <thead><tr><th>Place</th><th style="width:110px"></th></tr></thead>
+        <tbody>
+        {% for place in places %}
+            <tr data-place="{{ place.name }}"><td><a href="{{ path('front_desk_board', {kind: place.placeKind, id: place.placeId}) }}"><b>{{ place.name }}</b></a></td><td><a class="button outline" href="{{ path('front_desk_board', {kind: place.placeKind, id: place.placeId}) }}">Open</a></td></tr>
+        {% else %}
+            <tr><td colspan="2"><div class="empty"><b>No place to serve</b><span>The desk serves the places a package says what units they have, properties among them.</span></div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}
