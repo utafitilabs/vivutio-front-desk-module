@@ -46,6 +46,16 @@ given.
 - **No-shows**: an expected stay not yet in, from its arrival day; the mark is
   taken back if they come after all.
 
+It puts itself in the shell through the core's seams (`Vivutio\Contracts\Shell`):
+
+- **the menu**: the desk, for whoever holds `front_desk.read`;
+- **the dashboard**: over every place the person may open, today, two figures
+  in the band (stays in house tonight, in how many places; arrivals, and how
+  many are checked in) and two cards, *Arriving today* (expected first, then
+  checked in) and *Leaving today* (still in house first, then checked out),
+  each the first five and how many in all, with one door to the desk. A stay
+  does not say how many guests it brings, so stays are counted, not guests.
+
 ## Who may do what
 
 | Pair | Who |

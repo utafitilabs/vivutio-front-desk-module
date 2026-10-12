@@ -23,9 +23,11 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Vivutio\Bundle\IdentityBundle\Controller\SecurityController;
 use Vivutio\Bundle\IdentityBundle\Entity\User;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
+use Vivutio\Contracts\Place\ReachSourceInterface;
 use Vivutio\Contracts\Stay\StaySourceInterface;
 use Vivutio\Contracts\Stay\UnitSourceInterface;
 use Vivutio\FrontDesk\Tests\Application\StandIn\StandInPlaces;
+use Vivutio\FrontDesk\Tests\Application\StandIn\StandInReach;
 use Vivutio\FrontDesk\Tests\Application\StandIn\StandInStays;
 use Vivutio\FrontDesk\Tests\Application\StandIn\StandInUnits;
 
@@ -118,5 +120,6 @@ final class Kernel extends BaseKernel
         $services->set('test.stand_in.places', StandInPlaces::class)->tag(PlaceSourceInterface::TAG);
         $services->set('test.stand_in.stays', StandInStays::class)->tag(StaySourceInterface::TAG);
         $services->set('test.stand_in.units', StandInUnits::class)->tag(UnitSourceInterface::TAG);
+        $services->set('test.stand_in.reach', StandInReach::class)->tag(ReachSourceInterface::TAG);
     }
 }

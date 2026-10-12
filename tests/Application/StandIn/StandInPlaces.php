@@ -17,16 +17,35 @@ use Vivutio\Contracts\Place\PlaceInterface;
 use Vivutio\Contracts\Place\PlaceSourceInterface;
 
 /**
- * A package's place, played by an invented lodge.
+ * A package's places, played by an invented lodge and an invented camp.
  */
 final class StandInPlaces implements PlaceSourceInterface
 {
     public const string KIND = 'lodge';
     public const string LODGE = '0199b1c0-0000-7000-8000-00000000d001';
+    public const string CAMP = '0199b1c0-0000-7000-8000-00000000d002';
+
+    private const array NAMES = [self::LODGE => 'Vivutio Stand-in Lodge', self::CAMP => 'Vivutio Stand-in Camp'];
 
     public static function lodge(): PlaceInterface
     {
-        return new class implements PlaceInterface {
+        return self::place(self::LODGE);
+    }
+
+    public static function camp(): PlaceInterface
+    {
+        return self::place(self::CAMP);
+    }
+
+    private static function place(string $id): PlaceInterface
+    {
+        return new readonly class($id, self::NAMES[$id]) implements PlaceInterface {
+            public function __construct(
+                private string $id,
+                private string $name,
+            ) {
+            }
+
             public function getPlaceKind(): string
             {
                 return StandInPlaces::KIND;
@@ -34,12 +53,12 @@ final class StandInPlaces implements PlaceSourceInterface
 
             public function getPlaceId(): string
             {
-                return StandInPlaces::LODGE;
+                return $this->id;
             }
 
             public function getName(): string
             {
-                return 'Vivutio Stand-in Lodge';
+                return $this->name;
             }
         };
     }
@@ -57,10 +76,11 @@ final class StandInPlaces implements PlaceSourceInterface
     public function places(): iterable
     {
         yield self::lodge();
+        yield self::camp();
     }
 
     public function find(string $id): ?PlaceInterface
     {
-        return self::LODGE === $id ? self::lodge() : null;
+        return isset(self::NAMES[$id]) ? self::place($id) : null;
     }
 }

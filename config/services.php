@@ -15,6 +15,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Vivutio\Contracts\Access\ConcernSourceInterface;
 use Vivutio\Contracts\Deletion\DeletionContributorInterface;
+use Vivutio\Contracts\Shell\DashboardSourceInterface;
 use Vivutio\Contracts\Shell\MenuSourceInterface;
 use Vivutio\Contracts\Stay\StaySourceInterface;
 use Vivutio\Contracts\Stay\UnitSourceInterface;
@@ -23,6 +24,7 @@ use Vivutio\FrontDesk\Controller\FrontDeskController;
 use Vivutio\FrontDesk\Deletion\PlaceDeskDeletion;
 use Vivutio\FrontDesk\Repository\DeskStayRepository;
 use Vivutio\FrontDesk\Service\FrontDeskService;
+use Vivutio\FrontDesk\Shell\FrontDeskDashboard;
 use Vivutio\FrontDesk\Shell\FrontDeskMenu;
 use Vivutio\FrontDesk\ValueResolver\PlaceValueResolver;
 
@@ -57,6 +59,15 @@ return static function (ContainerConfigurator $container): void {
             tagged_iterator(UnitSourceInterface::TAG),
         ]);
     $services->alias(FrontDeskService::class, 'front_desk.desk');
+
+    // Today's arrivals and departures on the organization's dashboard, over
+    // the places the person may open.
+    $services->set('front_desk.dashboard', FrontDeskDashboard::class)
+        ->args([
+            service('front_desk.desk'),
+            service('security.authorization_checker'),
+        ])
+        ->tag(DashboardSourceInterface::TAG);
 
     // A controller's place, from the route's kind and id.
     // @see https://symfony.com/doc/current/controller/value_resolver.html#adding-a-custom-value-resolver

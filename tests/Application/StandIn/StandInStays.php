@@ -39,7 +39,7 @@ final class StandInStays implements StaySourceInterface
             return [];
         }
 
-        return array_values(array_filter(self::$stays, static fn (StandInStay $stay): bool => $stay->getArrival() <= $last && $stay->getDeparture() >= $first));
+        return array_values(array_filter(self::$stays, static fn (StandInStay $stay): bool => $stay->placedAt()->getPlaceId() === $place->getPlaceId() && $stay->getArrival() <= $last && $stay->getDeparture() >= $first));
     }
 
     public function find(string $id): ?StayInterface

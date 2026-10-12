@@ -29,12 +29,13 @@ final readonly class StandInStay implements StayInterface
         private int $nights,
         private int $tents,
         private bool $expected = true,
+        private string $place = StandInPlaces::LODGE,
     ) {
     }
 
     public function placedAt(): PlaceInterface
     {
-        return StandInPlaces::lodge();
+        return StandInPlaces::CAMP === $this->place ? StandInPlaces::camp() : StandInPlaces::lodge();
     }
 
     public function getStayKind(): string
